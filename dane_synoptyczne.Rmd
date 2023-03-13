@@ -1,0 +1,121 @@
+```{r}
+setwd("C:\\Users\\dansd\\OneDrive\\Documents\\Moje Projekty\\Zabawy\\data_synop")
+
+zbior_s <- data.frame()
+
+for(d in c("1960_1965","1966_1970","1971_1975","1976_1980","1981_1985","1986_1990","1991_1995","1996_2000",
+           "2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022"))
+  for(i in 100:700) {
+  
+  nazwa <- paste0('s_d_t_',i,'_',d,'.csv')
+  
+  if(file.exists(nazwa)){
+    
+    dane <- read.csv(nazwa, header = F)
+  
+    zbior_s <- rbind(zbior_s,dane)
+    
+  }
+
+}
+```
+
+```{r}
+setwd("C:\\Users\\dansd\\OneDrive\\Documents\\Moje Projekty\\Zabawy\\data_synop")
+nazwa <- 's_d_t_01_2023.csv'
+
+dane <- read.csv(nazwa, header = F)
+
+zbior_s <- rbind(zbior_s,dane)
+```
+
+
+```{r}
+colnames(zbior_s) <- c("Kod stacji",
+"Nazwa stacji",
+"Rok",
+"Miesiac",
+"Dzien",
+"Srednie dobowe zachmurzenie ogolne [oktanty]",
+"Status pomiaru NOS",
+"Srednia dobowa prędkosc wiatru [m/s]",
+"Status pomiaru FWS",
+"Srednia dobowa temperatura [°C]",
+"Status pomiaru TEMP",
+"Srednia dobowe cisnienie pary wodnej [hPa]",
+"Status pomiaru CPW",
+"Srednia dobowa wilgotnoSc względna [%]",
+"Status pomiaru WLGS",
+"Srednia dobowe cisnienie na poziomie stacji [hPa]",
+"Status pomiaru PPPS",
+"Srednie dobowe cisnienie na pozimie morza [hPa]",
+"Status pomiaru PPPM",
+"Suma opadu dzień  [mm]",
+"Status pomiaru WODZ",
+"Suma opadu noc   [mm]",
+"Status pomiaru WONO"   )
+```
+
+
+```{r}
+zbior_s %>% group_by(`Kod stacji`,`Nazwa stacji`) %>% count() %>% arrange(desc(n))
+```
+
+```{r}
+zbior_s_date <- zbior_s %>% mutate(date = make_date(Rok, Miesiac, Dzien))
+
+zbior_s_date_clean <- zbior_s_date %>% filter(`Status pomiaru TEMP` != 8 | is.na(`Status pomiaru TEMP`))
+```
+
+```{r}
+stacje_pom_s <- zbior_s_date %>% 
+  group_by(`Kod stacji`) %>% 
+  summarise("Nazwa stacji" = last(`Nazwa stacji`), start = first(date), stop = last(date), ilosc = n()) %>% 
+  arrange(desc(ilosc))
+```
+
+```{r}
+zbior_s_date_clean %>% select()
+```
+
+```{r}
+zbior_s_opad <- zbior_s_date_clean %>% mutate('suma opadu - total [mm]' = `Suma opadu dzien  [mm]`+`Suma opadu noc   [mm]`)
+```
+
+
+```{r}
+top_opad <- sort(zbior_s_opad$`suma opadu - total [mm]`, decreasing = T)[1:10]
+
+zbior_s_opad %>% filter(`suma opadu - total [mm]` %in% top_opad ) %>% arrange(desc(`suma opadu - total [mm]`))
+```
+
+```{r}
+dane_elb <- zbior_date_clean %>% filter(`Kod stacji` == 354190160)
+
+dane_elb_ts_d <- ts(dane_war$`Średnia dobowa temperatura  [°C]`, start=c(1960,1), frequency=365) #zamiana na time-series
+
+```
+
+
+```{r}
+dane_elb_decompose <- decompose(dane_elb_ts_d)
+```
+
+```{r}
+plot(dane_elb_decompose$x)
+
+plot(dane_elb_decompose$trend)
+
+plot(dane_elb_decompose$seasonal)
+
+plot(dane_elb_decompose$random)
+
+plot(dane_elb_decompose$x - dane_elb_decompose$seasonal)
+
+```
+
+```{r}
+forecast(auto.arima(dane_elb_ts_d))
+```
+
+

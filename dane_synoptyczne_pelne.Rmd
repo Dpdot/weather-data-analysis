@@ -1,0 +1,149 @@
+```{r}
+setwd("C:\\Users\\dansd\\OneDrive\\Documents\\Moje Projekty\\Zabawy\\data_synop")
+
+zbior_s_2 <- data.frame()
+
+for(d in c("1960_1965","1966_1970","1971_1975","1976_1980","1981_1985","1986_1990","1991_1995","1996_2000",
+           "2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022"))
+  for(i in 100:700) {
+  
+  nazwa <- paste0('s_d_',i,'_',d,'.csv')
+  
+  if(file.exists(nazwa)){
+    
+    dane <- read.csv(nazwa, header = F)
+  
+    zbior_s_2 <- rbind(zbior_s_2,dane)
+    
+  }
+
+}
+```
+
+```{r}
+setwd("C:\\Users\\dansd\\OneDrive\\Documents\\Moje Projekty\\Zabawy\\data_synop")
+nazwa <- 's_d_01_2023.csv'
+
+dane <- read.csv(nazwa, header = F)
+
+zbior_s_2 <- rbind(zbior_s_2,dane)
+```
+
+
+```{r}
+colnames(zbior_s_2) <- c('Kod stacji',
+'Nazwa stacji',
+'Rok',
+'Miesiąc',
+'Dzień',
+'Maksymalna temperatura dobowa [°C]',
+'Status pomiaru TMAX',
+'Minimalna temperatura dobowa [°C]',
+'Status pomiaru TMIN',
+'Średnia temperatura dobowa [°C]',
+'Status pomiaru STD',
+'Temperatura minimalna przy gruncie [°C]',
+'Status pomiaru TMNG',
+'Suma dobowa opadu [mm]',
+'Status pomiaru SMDB',
+'Rodzaj opadu [S/W/ ]',
+'Wysokość pokrywy śnieżnej [cm]',
+'Status pomiaru PKSN',
+'Równoważnik wodny śniegu  [mm/cm]',
+'Status pomiaru RWSN',
+'Usłonecznienie [godziny]',
+'Status pomiaru USL',
+'Czas trwania opadu deszczu [godziny]',
+'Status pomiaru DESZ',
+'Czas trwania opadu śniegu [godziny]',
+'Status pomiaru SNEG',
+'Czas trwania opadu deszczu ze śniegiem [godziny] 6/1',
+'Status pomiaru DISN',
+'Czas trwania gradu [godziny]',
+'Status pomiaru GRAD',
+'Czas trwania mgły [godziny]',
+'Status pomiaru MGLA',
+'Czas trwania zamglenia  [godziny]',
+'Status pomiaru ZMGL',
+'Czas trwania sadzi [godziny]',
+'Status pomiaru SADZ',
+'Czas trwania gołoledzi [godziny]',
+'Status pomiaru GOLO',
+'Czas trwania zamieci śnieżnej niskiej [godziny]  6/1',
+'Status pomiaru ZMNI',
+'Czas trwania zamieci śnieżnej wysokiej [godziny] 6/1',
+'Status pomiaru ZMWS',
+'Czas trwania zmętnienia [godziny]',
+'Status pomiaru ZMET',
+'Czas trwania wiatru >=10m/s [godziny]',
+'Status pomiaru FF10',
+'Czas trwania wiatru >15m/s [godziny]',
+'Status pomiaru FF15',
+'Czas trwania burzy  [godziny]',
+'Status pomiaru BRZA',
+'Czas trwania rosy  [godziny]',
+'Status pomiaru ROSA',
+'Czas trwania szronu [godziny]',
+'Status pomiaru SZRO',
+'Wystąpienie pokrywy śnieżnej  [0/1]',
+'Status pomiaru DZPS',
+'Wystąpienie błyskawicy  [0/1]',
+'Status pomiaru DZBL',
+'Stan gruntu [Z/R]',
+'Izoterma dolna  [cm]',
+'Status pomiaru IZD',
+'Izoterma górna [cm]',
+'Status pomiaru IZG',
+'Aktynometria  [J/cm2]',
+'Status pomiaru AKTN'  )
+```
+
+
+```{r}
+zbior_s_2_date <- zbior_s_2 %>% mutate(date = make_date(Rok, Miesiac, Dzien))
+
+zbior_s_2_date_clean <- zbior_s_2_date %>% filter(`Status pomiaru STD` != 8 | is.na(`Status pomiaru STD`))
+```
+
+
+```{r}
+dane_wesele <- zbior_s_2_date_clean %>%
+  filter(`Kod stacji` == 354190160, Dzien == 27, Miesiac == 5) %>% 
+  select(Rok,`Maksymalna temperatura dobowa [°C]`,`Minimalna temperatura dobowa [°C]`,`Srednia temperatura dobowa [°C]`,`Suma dobowa opadu [mm]`,`Czas trwania opadu deszczu [godziny]`,`Status pomiaru SMDB`)
+```
+
+```{r}
+sr_temp <- dane_wesele$`Srednia temperatura dobowa [°C]`
+max_temp <- dane_wesele$`Maksymalna temperatura dobowa [°C]`
+min_temp <- dane_wesele$`Minimalna temperatura dobowa [°C]`
+
+sr_opady <- dane_wesele$`Suma dobowa opadu [mm]`
+czas_opad <- dane_wesele$`Czas trwania opadu deszczu [godziny]`
+czy_opad <- dane_wesele$`Status pomiaru SMDB`
+```
+
+```{r}
+quantile(min_temp,0.25) 
+quantile(sr_temp,0.25)
+quantile(max_temp,0.25)
+
+mean(min_temp)
+mean(sr_temp)
+mean(max_temp)
+
+quantile(min_temp,0.75) 
+quantile(sr_temp,0.75)
+quantile(max_temp,0.75)
+```
+```{r}
+paste0(round(sum(is.na(czy_opad))/63 * 100,1),"% dni z opadem")
+
+paste0(round(mean(sr_opady[is.na(czy_opad)]),1),"mm deszczu")
+
+paste(round(mean(czas_opad[is.na(czy_opad)]),1),"godzin trwania opadu")
+ 
+```
+```{r}
+
+```
+

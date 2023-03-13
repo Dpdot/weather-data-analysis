@@ -1,0 +1,154 @@
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(thief)
+library(fst)
+```
+
+```{r}
+zbior <- data.frame()
+
+for(i in 1951:2000) {
+
+nazwa <- paste('Datasety/k_d_t_',i,'.csv',sep = "")
+
+dane <- read.csv(nazwa, header = F)
+
+zbior <- rbind(zbior,dane)
+
+}
+```
+
+```{r}
+zbior_2 <- data.frame()
+
+for(i in 2001:2022) {
+  for(j in 1:12) {
+    mies <- if(nchar(j) == 1){paste0(0,j)}else{j}
+    
+    nazwa_2 <- paste('Nowy folder/k_d_t_',mies,"_",i,'.csv',sep = "")
+
+    dane_2 <- read.csv(nazwa_2, header = F)
+
+    zbior_2 <- rbind(zbior_2,dane_2)
+  }
+}
+
+colnames(zbior_2) <- c("Kod stacji","Nazwa stacji", "Rok", "Miesiac","Dzien",
+                     "Średnia dobowa temperatura  [°C]","Status pomiaru TEMP",
+                     "Średnia dobowa wilgotność względna [%]","Status pomiaru WLGS",
+                     "Średnia dobowa prędkość wiatru [m/s]","Status pomiaru FWS",
+                     "Średnie dobowe zachmurzenie ogólne [oktanty]","Status pomiaru NOS")
+```
+
+
+```{r}
+colnames(zbior) <- c("Kod stacji","Nazwa stacji", "Rok", "Miesiac","Dzien",
+                     "Średnia dobowa temperatura  [°C]","Status pomiaru TEMP",
+                     "Średnia dobowa wilgotność względna [%]","Status pomiaru WLGS",
+                     "Średnia dobowa prędkość wiatru [m/s]","Status pomiaru FWS",
+                     "Średnie dobowe zachmurzenie ogólne [oktanty]","Status pomiaru NOS")
+
+```
+
+```{r}
+zbior_t <- rbind(zbior,zbior_2)
+```
+
+```{r}
+zbior_t %>% group_by(`Kod stacji`,`Nazwa stacji`) %>% count() %>% arrange(desc(n))
+```
+
+```{r}
+zbior_date <- zbior_t %>% mutate(date = make_date(Rok, Miesiac, Dzien))
+
+zbior_date_clean <- zbior_date %>% filter(`Status pomiaru TEMP` != 8 | is.na(`Status pomiaru TEMP`))
+```
+
+```{r}
+stacje_pom <- zbior_date %>% 
+  group_by(`Kod stacji`) %>% 
+  summarise("Nazwa stacji" = last(`Nazwa stacji`), start = first(date), stop = last(date), ilosc = n()) %>% 
+  arrange(desc(ilosc))
+```
+
+
+```{r}
+dane_war <- zbior_date_clean %>% filter(`Kod stacji` == 252200150)
+
+dane_war_ts_d <- ts(dane_war$`Średnia dobowa temperatura  [°C]`, start=c(1951,1), frequency=365) #zamiana na time-series
+
+```
+
+
+```{r}
+dane_war_decompose <- decompose(dane_war_ts_d)
+```
+
+```{r}
+plot(dane_war_decompose$x)
+
+plot(dane_war_decompose$trend)
+
+plot(dane_war_decompose$seasonal)
+
+plot(dane_war_decompose$random)
+
+plot(dane_war_decompose$x - dane_war_decompose$seasonal)
+```
+
+
+```{r}
+dane_war_m <- dane_war %>% group_by(Rok,Miesiac) %>% summarise("Średnia temperatura" = mean(`Średnia dobowa temperatura  [°C]`))
+
+dane_war_ts_m <- ts(dane_war_m$`Średnia temperatura`, start=c(1951,1), frequency=12)
+
+dane_war_decompose_m <- decompose(dane_war_ts_m)
+```
+
+```{r}
+plot(dane_war_decompose_m$x)
+
+plot(dane_war_decompose_m$trend)
+
+plot(dane_war_decompose_m$seasonal)
+
+plot(dane_war_decompose_m$random)
+
+plot(dane_war_decompose_m$x - dane_war_decompose_m$random)
+```
+
+```{r}
+dane_war_q <- dane_war %>% mutate(Kwartal = quarter(date)) %>% 
+  group_by(Rok,Kwartal) %>% 
+  summarise("Średnia temperatura" = mean(`Średnia dobowa temperatura  [°C]`)) %>%
+  ungroup()
+
+dane_war_ts_q <- ts(dane_war_q$`Średnia temperatura`, start=c(1951,1), end=c(2022,4), frequency=4)
+
+dane_war_decompose_q <- decompose(dane_war_ts_q)
+```
+
+```{r}
+plot(dane_war_decompose_q$x)
+
+plot(dane_war_decompose_q$trend)
+
+plot(dane_war_decompose_q$seasonal)
+
+plot(dane_war_decompose_q$random)
+
+```
+
+```{r}
+dane_war_r <- dane_war %>% group_by(Rok) %>% summarise("Średnia temperatura" = mean(`Średnia dobowa temperatura  [°C]`))
+
+dane_war_ts_r <- ts(dane_war_r$`Średnia temperatura`, start=c(1951,1), end=c(2022,1), frequency=1)
+
+  ggplot(dane_war_r[1:72,], aes(Rok,`Średnia temperatura`)) +
+    geom_line() +
+    geom_smooth()
+
+```

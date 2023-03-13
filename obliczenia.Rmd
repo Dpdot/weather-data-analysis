@@ -1,0 +1,15 @@
+
+```{r}
+dni_upalne <- dane_war %>% mutate(czy_upal = ifelse(`Średnia dobowa temperatura  [°C]` >= 20, 1, 0)) %>% group_by(Rok) %>% summarise(`Dni upalne` = sum(czy_upal))
+
+ggplot(data=dni_upalne, aes(x=Rok,y=`Dni upalne`)) +
+  geom_bar(stat="identity")
+```
+
+```{r}
+srednia_temp <- dane_war %>% mutate(mies = paste0(Rok,"_",Miesiac)) %>% group_by(mies) %>% summarise(`Średnia temp.` = mean(`Średnia dobowa temperatura  [°C]`))
+
+ggplot(data=srednia_temp, aes(x = mies, y=`Średnia temp.`)) +
+  geom_bar(stat="identity")
+```
+
